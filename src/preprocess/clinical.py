@@ -16,7 +16,7 @@ class ClinicalData:
         return df
     
     def select_cols(self) -> None:
-        self.df.drop(['ethnicity', 'race', 'overallsurvival', 'status'], axis=1, inplace=True)
+        self.df.drop(['ethnicity', 'race', 'overallsurvival'], axis=1, inplace=True)
         
     def fill_na_clinical_data(self) -> None:
         def fill_na(row: pd.Series) -> pd.Series:
@@ -81,6 +81,8 @@ class ClinicalData:
         self.fill_na_clinical_data()
         self.label_encode_clinical_data()
         self.impute_na_clinical_data()
+
+        self.df.dropna(subset=['status'], inplace=True)
 
     def get_label_decoded(self) -> pd.DataFrame:
         df_copy = self.df.copy(deep=True)

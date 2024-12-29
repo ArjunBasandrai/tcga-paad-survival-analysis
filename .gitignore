@@ -171,3 +171,5 @@ cython_debug/
 .pypirc
 
 tcga-paad/
+
+**/test.ipynb

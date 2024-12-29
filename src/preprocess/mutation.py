@@ -16,30 +16,23 @@ class MutationData:
         df.columns.name = None
         return df
 
-    def add_stages(self, clinical_data: ClinicalData) -> None:
+    def merge_data(self, clinical_data: ClinicalData) -> None:
         self.df = self.df.merge(
-            clinical_data()[['patient_id', 'pathologic_stage']],
+            clinical_data()[['patient_id', 'status', 'overall_survival']],
             on='patient_id',
             how='left'
         )
 
-    def merge_stages(self) -> None:
-        self.df['pathologic_stage'] = self.df['pathologic_stage'].replace({3:2, 4:2})
-        self.label_mappings = {
-            'no cancer': 0,
-            'early stage cancer': 1,
-            'late stage cancer': 2,
-        }
+    def select_common_patients(self) -> None:
+        self.df.dropna(subset=['status', 'overall_survival'], inplace=True)
 
     def clean_data(self) -> None:
         for col in self.df.columns[1:]:
             self.df[col] = self.df[col].astype(int)
 
-        self.df = self.df[self.df['pathologic_stage'] != 0]
-
     def add_stage_data(self, clinical_data: ClinicalData) -> None:
-        self.add_stages(clinical_data)
-        self.merge_stages()
+        self.merge_data(clinical_data)
+        self.select_common_patients()
         
     def __call__(self) -> pd.DataFrame:
         return self.df
