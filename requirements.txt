@@ -8,3 +8,4 @@ plotly
 lifelines
 scipy
 seaborn
+jinja2
