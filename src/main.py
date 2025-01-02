@@ -5,6 +5,7 @@ import os
 from preprocess.config.config import Conf
 from preprocess.clinical import ClinicalData
 from preprocess.mutation import MutationData
+from preprocess.mirna import miRNAData
 
 from preprocess.config.patient_mappings import PatientMappings
 
@@ -71,15 +72,12 @@ def perform_km_analysis(mutation_data: MutationData):
     significant_genes_df = pd.DataFrame(significant_genes)
     significant_genes_df.to_csv("../results/km_test/significant_genes_paad.csv")
 
-def perform_cox_regression(mutation_data: MutationData):
+def perform_cox_regression(mirna_data: miRNAData):
     output_dir = "../results/cox_regression"
     os.makedirs(output_dir, exist_ok=True)
 
-    cph = CoxPHFitter(penalizer=0.1)
-    cph.fit(mutation_data().drop(['patient_id'], axis=1), show_progress=True, duration_col="overall_survival", event_col="status")
-    cph.summary.to_csv(os.path.join(output_dir, "results.csv"))
-
-    cph.check_assumptions(mutation_data().drop(['patient_id'], axis=1), p_value_threshold=0.05)
+    mirna_data.cox_regression(output_path = os.path.join(output_dir, 'cox_results.csv'), save_summary = True)
+    mirna_data.cox_regression_results(output_dir = output_dir, save_significant_mirna = True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Perform Kaplan-Meier analysis on mutation data.")
@@ -94,13 +92,22 @@ if __name__ == "__main__":
 
     clinical_data()['pathologic_stage'].isna().sum()
 
-    mutation_data = MutationData(Conf.datasets['miRNA'])
-    mutation_data.add_stage_data(clinical_data)
-    mutation_data.clean_data()
 
     if args.km:
-        print("Starting Kaplan-Meier analysis...")c
+        print("Starting Kaplan-Meier analysis...")
+
+        mutation_data = MutationData(Conf.datasets['miRNA'])
+        mutation_data.add_stage_data(clinical_data)
+        mutation_data.clean_data()
+
         perform_km_analysis(mutation_data)
+
     elif args.cx:
         print("Starting Cox-Regression analysis...")
-        perform_cox_regression(mutation_data)
+
+        mirna_data = miRNAData(Conf.datasets['miRNA'])
+        mirna_data.add_stage_data(clinical_data)
+        mirna_data.clean_data()
+        mirna_data.pca(0.85)
+
+        perform_cox_regression(mirna_data)
