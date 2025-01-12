@@ -146,7 +146,7 @@ class miRNAData:
         sorted_mirna = np.array(sorted(weights.items(), key=lambda item: item[1], reverse=True))
         return sorted_mirna
 
-    def _plot_important_mirna_distriubtion(self, important_mirna: np.array, output_dir: str) -> None:
+    def _plot_important_mirna_distribution(self, important_mirna: np.array, output_dir: str) -> None:
         fig, axes = plt.subplots(5, 3, figsize=(15, 20))
         axes = axes.flatten()
 
@@ -260,7 +260,7 @@ class miRNAData:
                 
     def cox_regression_results(self, output_dir: str, save_significant_mirna: bool = False) -> None:
         important_mirna = self._extract_important_mirna()
-        self._plot_important_mirna_distriubtion(important_mirna, output_dir)
+        self._plot_important_mirna_distribution(important_mirna, output_dir)
         significant_mirna = self._plot_kaplan_meier_curves(important_mirna, output_dir)
         if save_significant_mirna:
             significant_mirna.to_csv(os.path.join(output_dir, "significant_mirna.csv"))
