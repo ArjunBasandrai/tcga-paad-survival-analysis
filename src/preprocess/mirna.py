@@ -119,7 +119,8 @@ class miRNAData:
     def _save_cph_regression(self, output_path: str) -> None:
         self.cph.summary.to_csv(output_path)
     
-    def cox_regression(self, output_path: str, save_summary: bool = False, check_assumptions: bool = True, p_value: float = 0.05) -> None:
+    def cox_regression(self, output_path: str, method: str, save_summary: bool = False, check_assumptions: bool = True, p_value: float = 0.05) -> None:
+        self.method = method
         self._cox_regression_preprocess()
         self._fit_cox_regression()
 
@@ -140,17 +141,19 @@ class miRNAData:
                 feature_name = feature['index']
                 feature_value = feature[f"PC{component}"]
                 if feature_name not in weights.keys():
-                    weights[feature_name] = component_explained_variance * feature_value
+                    weights[feature_name] = component_explained_variance * feature_value if self.method == 'weighted' else feature_value
                 else:
-                    weights[feature_name] += component_explained_variance * feature_value
+                    weights[feature_name] = (weights[feature_name] + component_explained_variance * feature_value) if self.method == 'weighted' else max(weights[feature_name], feature_value)
         sorted_mirna = np.array(sorted(weights.items(), key=lambda item: item[1], reverse=True))
+        if len(sorted_mirna) > 15:
+            sorted_mirna = sorted_mirna[:15, 0]
         return sorted_mirna
 
     def _plot_important_mirna_distribution(self, important_mirna: np.array, output_dir: str) -> None:
         fig, axes = plt.subplots(5, 3, figsize=(15, 20))
         axes = axes.flatten()
 
-        for idx, mirna in enumerate(important_mirna[:15, 0]):
+        for idx, mirna in enumerate(important_mirna):
             mirna_values = self.df[mirna]
             mirna_counts = mirna_values.value_counts().reset_index()
             mirna_counts.columns = [mirna, 'count']
@@ -184,13 +187,15 @@ class miRNAData:
         plt.close(fig)
     
     def _plot_kaplan_meier_curves(self, important_mirna: np.array, output_dir: str, p_value_threshold: float = 0.05) -> pd.DataFrame:
-        columns = list(important_mirna[:15, 0])
+        columns = list(important_mirna)
         columns_to_transform = columns[:]
         columns.extend(['status', 'overall_survival'])
         df_mirna = self.df[columns]
 
         for col in columns_to_transform:
             col_quantiles = df_mirna[col].quantile([0.25, 0.75]).values
+            if col_quantiles[0] == col_quantiles[1]:
+                continue
             df_mirna.loc[:, col] = pd.cut(
                 df_mirna[col], 
                 bins=[-float('inf'), col_quantiles[0], col_quantiles[1], float('inf')], 
@@ -207,7 +212,7 @@ class miRNAData:
             mirna_medium = df_mirna[df_mirna[mirna] == 1]
             mirna_high = df_mirna[df_mirna[mirna] == 2]
 
-            min_group_size = 20
+            min_group_size = 10
             if len(mirna_low) < min_group_size or len(mirna_medium) < min_group_size or len(mirna_high) < min_group_size:
                 continue
 

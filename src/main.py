@@ -13,17 +13,18 @@ def perform_km_analysis(mutation_data: MutationData):
 
     mutation_data.kaplan_meier_analysis(output_dir)
 
-def perform_cox_regression(mirna_data: miRNAData):
-    output_dir = "../results/cox_regression"
+def perform_cox_regression(mirna_data: miRNAData, method: str):
+    output_dir = f"../results/cox_regression/cox_regression_{method}"
     os.makedirs(output_dir, exist_ok=True)
 
-    mirna_data.cox_regression(output_path = os.path.join(output_dir, 'cox_results.csv'), save_summary = True)
+    mirna_data.cox_regression(output_path = os.path.join(output_dir, 'cox_results.csv'), save_summary = True, method=method)
     mirna_data.cox_regression_results(output_dir = output_dir, save_significant_mirna = True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Perform Kaplan-Meier analysis on mutation data.")
     parser.add_argument("-k", "--km", action="store_true", help="Run the Kaplan-Meier analysis.")
     parser.add_argument("-c", "--cx", action="store_true", help="Run the Cox-Regression analysis.")
+    parser.add_argument("--method", type=str, help="Specify the method for Cox-Regression analysis (weighted or simple).")
     args = parser.parse_args()
 
     clinical_data = ClinicalData(Conf.datasets['Clinical'])
@@ -45,11 +46,12 @@ if __name__ == "__main__":
 
     elif args.cx:
 
-        print("Starting Cox-Regression analysis...")
+        method = args.method if args.method in ['simple', 'weighted'] else 'weighted'
+        print(f"Starting Cox-Regression analysis using \"{method}\" method...")
 
         mirna_data = miRNAData(Conf.datasets['miRNA'])
         mirna_data.add_stage_data(clinical_data)
         mirna_data.clean_data()
         mirna_data.pca(0.85)
 
-        perform_cox_regression(mirna_data)
+        perform_cox_regression(mirna_data, method)
