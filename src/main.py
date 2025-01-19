@@ -1,24 +1,27 @@
 import argparse
 import os
 
-from preprocess.config.config import Conf
-from preprocess.clinical import ClinicalData
-from preprocess.mutation import MutationData
-from preprocess.mirna import miRNAData
-from preprocess.config.patient_mappings import PatientMappings
+from config.config import Conf
+from config.patient_mappings import PatientMappings
+from data_classes.clinical import ClinicalData
+from data_classes.mutation import MutationData
+from data_classes.mirna import miRNAData
+
+from survival_analysis.mutation_kaplan_meier import kaplan_meier_analysis
+from survival_analysis.mirna_cox_regression import cox_regression, cox_regression_results
 
 def perform_km_analysis(mutation_data: MutationData):
-    output_dir = "../results/kaplan_meier_analysis"
+    output_dir = "../results/mutation_data_analysis"
     os.makedirs(output_dir, exist_ok=True)
 
-    mutation_data.kaplan_meier_analysis(output_dir)
+    kaplan_meier_analysis(mutation_data(), output_dir)
 
 def perform_cox_regression(mirna_data: miRNAData, method: str):
-    output_dir = f"../results/cox_regression/cox_regression_{method}"
+    output_dir = f"../results/mirna_data_analysis/cox_regression_{method}"
     os.makedirs(output_dir, exist_ok=True)
 
-    mirna_data.cox_regression(output_path = os.path.join(output_dir, 'cox_results.csv'), save_summary = True, method=method)
-    mirna_data.cox_regression_results(output_dir = output_dir, save_significant_mirna = True)
+    cph = cox_regression(mirna_data.df_for_survival, output_path = os.path.join(output_dir, 'cox_results.csv'), save_summary=True)
+    cox_regression_results(cph, mirna_data.explained_variance, mirna_data(), mirna_data.loadings_df, method=method, output_dir=output_dir, save_significant_mirna=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Perform Kaplan-Meier analysis on mutation data.")
