@@ -1,11 +1,5 @@
 import pandas as pd
 
-import os
-from lifelines import KaplanMeierFitter
-from lifelines.statistics import logrank_test
-import matplotlib.pyplot as plt
-from tqdm import tqdm
-
 from data_classes.clinical import ClinicalData
 
 class MutationData:

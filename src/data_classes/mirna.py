@@ -1,16 +1,6 @@
 import pandas as pd
-import numpy as np
-import os
-import matplotlib.pyplot as plt
-
-from tqdm import tqdm
 
 from sklearn.decomposition import PCA
-from scipy.stats import gaussian_kde
-
-from lifelines import CoxPHFitter
-from lifelines import KaplanMeierFitter
-from lifelines.statistics import logrank_test
 
 from data_classes.clinical import ClinicalData
 
